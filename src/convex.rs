@@ -11,14 +11,15 @@ impl Convex2 {
         Convex2 { ps }
     }
 
-    pub fn is_convex2(ps: Vec<Vec2>) -> bool {
+    pub fn is_convex2(ps: &Vec<Vec2>) -> bool {
         let len = ps.len();
 
         match ps.len() {
-            0..=1 => return false,
-            2   => return true,
-            len => {
-                let (_, res) = (0..len).fold((None, true), |(dir, res), i| {
+            0..=1   => return false,
+            // 辺、三角形は常に凸
+            2..=3   => return true,
+            len => 
+                (0..len).fold((None, true), |(dir, res), i| {
                     let p = ps[(i + 1) % len] - ps[i % len];
                     let q = ps[(i + 2) % len] - ps[(i + 1) % len];
 
@@ -26,10 +27,8 @@ impl Convex2 {
                     let dir = dir.or(Some(ord));
 
                     (dir, dir.unwrap() == ord && res)
-                });
-
-                return res;
-            }
+                }).1
+            
         }
     }
 }
