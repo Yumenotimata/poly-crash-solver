@@ -7,13 +7,15 @@ pub struct Convex2 {
 }
 
 impl Convex2 {
-    pub fn new(ps: Vec<Vec2>) -> Convex2 {
-        Convex2 { ps }
+    pub fn new(ps: Vec<Vec2>) -> Result<Convex2, String> {
+        if Convex2::is_convex2(&ps) {
+            Ok(Convex2 { ps })
+        } else {
+            Err("The polygon is not convex".into())
+        }
     }
 
     pub fn is_convex2(ps: &Vec<Vec2>) -> bool {
-        let len = ps.len();
-
         match ps.len() {
             0..=1   => return false,
             // 辺、三角形は常に凸
@@ -39,6 +41,7 @@ impl Into<Support> for Convex2 {
     }
 }
 
+#[derive(Clone)]
 pub struct Support {
     ps: Vec<Vec2>
 }
@@ -48,9 +51,56 @@ impl Support {
         Support { ps }
     }
 
-    pub fn map(&self, v: Vec2) -> Vec2 {
+    pub fn map(&self, v: &Vec2) -> Vec2 {
         *self.ps.iter()
-            .max_by(|p, q| p.dot(v).partial_cmp(&q.dot(v)).unwrap())
+            .max_by(|p, q| p.dot(*v).partial_cmp(&q.dot(*v)).unwrap())
             .unwrap()
+    }
+}
+
+pub struct Minkowski {
+    pub p: Support,
+    pub q: Support,
+}
+
+impl Minkowski {
+    pub fn new<S: Into<Support>>(p: S, q: S) -> Minkowski {
+        Minkowski { p: p.into(), q: q.into() }
+    }
+
+    pub fn map(&self, v: &Vec2) -> Vec2 {
+        self.p.map(v) - self.q.map(&-v)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use glam::Vec2;
+
+    use crate::convex::Convex2;
+
+    #[test]
+    fn test_is_convex2() {
+        // 凸
+        // 右回り
+        assert_eq!(
+            Convex2::is_convex2(&vec![Vec2::new(1.0, 1.0), Vec2::new(1.0, -1.0), Vec2::new(-1.0, -1.0), Vec2::new(-1.0, 1.0)]),
+            true
+        );
+        // 左回り
+        assert_eq!(
+            Convex2::is_convex2(&vec![Vec2::new(1.0, 1.0), Vec2::new(-1.0, 1.0), Vec2::new(-1.0, -1.0), Vec2::new(1.0, -1.0)]),
+            true
+        );
+
+        // 凸でない
+        assert_eq!(
+            Convex2::is_convex2(&vec![Vec2::new(1.0, 1.0), Vec2::new(1.0, -1.0), Vec2::new(-1.0, 1.0), Vec2::new(-1.0, -1.0)]),
+            false
+        );
+        assert_eq!(
+            Convex2::is_convex2(&vec![Vec2::new(1.0, 1.0), Vec2::new(1.0, -1.0), Vec2::new(-1.0, -1.0), Vec2::new(-1.0, 1.0), Vec2::new(0.0, 0.0)]),
+            false
+        );
     }
 }
