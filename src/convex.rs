@@ -1,3 +1,5 @@
+use std::cmp;
+
 use glam::{Vec2};
 
 pub struct Convex2 {
@@ -12,36 +14,23 @@ impl Convex2 {
     pub fn is_convex2(ps: Vec<Vec2>) -> bool {
         let len = ps.len();
 
-        if len <= 1 {
-            return false;
-        }
+        match ps.len() {
+            0..=1 => return false,
+            2   => return true,
+            len => {
+                let (_, res) = (0..len).fold((None, true), |(dir, res), i| {
+                    let p = ps[(i + 1) % len] - ps[i % len];
+                    let q = ps[(i + 2) % len] - ps[(i + 1) % len];
 
-        let a = ps[0];
-        let b = ps[1];
-        let c = ps[2];
+                    let ord = p.perp_dot(q) >= 0.0;
+                    let dir = dir.or(Some(ord));
 
-        let p = b - a;
-        let q = c - b;
+                    (dir, dir.unwrap() == ord && res)
+                });
 
-        let init = p.dot(q) >= 0.0;
-
-        for i in 0..len {
-            let a = ps[i % len];
-            let b = ps[(i + 1) % len];
-            let c = ps[(i + 2) % len];
-
-            let p = b - a;
-            let q = c - b;
-
-            println!("iterate {}, {}, {}", a, b, c);
-
-            if (p.dot(q) >= 0.0) != init {
-                println!("{}, {}, {}", a, b, c);
-                return false;
+                return res;
             }
         }
-
-        return true;
     }
 }
 
