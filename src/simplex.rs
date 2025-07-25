@@ -1,5 +1,6 @@
 use glam::Vec2;
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct Simplex2 {
     pub points: Vec<Vec2>,
 }
